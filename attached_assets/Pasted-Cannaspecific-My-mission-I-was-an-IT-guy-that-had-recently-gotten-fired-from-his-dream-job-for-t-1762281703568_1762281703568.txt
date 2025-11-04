@@ -1,0 +1,25 @@
+Cannaspecific 
+
+My mission:
+
+I was an IT guy that had recently gotten fired from his dream job for testing positive for marijuana on a drug test. Confused when asked about it, they asked if I had a medical marijuana card. I told them I could get one if I needed to, but that answer ended up getting me terminated from the position. I would later find out I didn't need a medical marijuana card in the state of virginia after a july 2022 ruling, that I would just need a doctor's recommendation, but the damage was already done. That led me to obtain my medical marijuana card in the state of virginia where I lived at the time. That opened my world up to dispensaries and legal marijuana for the very first time in my life. As a very seasoned cannabis consumer, I was already very experienced with marijuana, but seeing how controlled and how many tests were being done on each strain and product being sold, it got me curious about the data and what we could be unlocking with it. Then I ended up moving to florida and realized for the first time that my virginia medical marijuana card would not work in another state. Also I realized that with each dispensary I went to, they each held different policies on how to access their certificates of analysis. Amazed by how much data is being collected at all of these places, but how fragmented and broken all the data sources are, led me to want to aggregate it all into one place to not only set a standard and collective for inputting all the data already being gathered from the cannabis strains and products on the market, but also serve as a trove to uncover new medical findings and other new insight not previously known or discovered. Thats why I established Cannaspecific.
+
+More formally written as:
+
+Headline: Tired of the Guessing Game?
+Sub-headline: We’re Ending "Strain Roulette." Join Us to Unlock the True Science of Cannabis.
+Our Story
+Our journey began with a simple but frustrating realization: the legal cannabis industry is sitting on a mountain of data, but no one is connecting the dots.
+As a new medical cannabis patient, I was fascinated by the detailed lab reports (Certificates of Analysis) for each product. I saw a powerful key to understanding why some products work for specific needs... and others don't.
+But I quickly discovered the system is broken.
+When I moved from Virginia to Florida, I found that not only did my medical card not transfer, but every dispensary had a different, often difficult, process for accessing these vital reports. The data was there, but it was fragmented, siloed, and completely disconnected from the most important variable: the patient's real-world experience.
+We're all forced to rely on catchy strain names, marketing hype, or vague "Indica/Sativa" labels, which are often inconsistent and unhelpful.
+That's Why CannaSpecific Was Born.
+CannaSpecific is on a mission to do what no one else has: aggregate and standardize this fragmented data.
+But the lab report is only half the story. The other, more important half is you.
+We are building a massive database that connects the exact chemical profile (cannabinoids and terpenes) of a product to the actual effects and relief reported by users like you. We want to finally answer the question: "What really works, and why?"
+Join the Movement
+This is more than just an app; it's a community research project. By contributing your experiences, you are helping to build a future where everyone can find the precise, predictable, and effective cannabis products they deserve.
+
+My product:
+a website. This website will serve as the landing page for my Cannaspecific business idea as a way to attract interested parties to contribute towards the research database we will be collecting and also to attract interested parties that might want to partner, donate, help spread the word, etc. we’re trying to start a movement and unify people together in this idea. Eventually we will collect all of the COAs from all the dispensaries and become a standard that future dispensaries will utilize to log their strain information and patient reported outcomes. We are going to be focusing also on what it currently known as the entourage effect and using AI we will craft a LLM that will uncover hidden linkages and new perspectives and help us really use cannabis to its full potential medicinally. We are a fun, hip, new movement that’s gonna take off and we want everyone on board! We will wanna market this movement on Facebook, TikTok, instagram, etc for the maximum views. I’ve bought the domain Cannaspecific.com on godaddy and it currently redirects to my Facebook but if you wanna walk me through incorporating your code and/or suggestions that would be great too thanks. 
