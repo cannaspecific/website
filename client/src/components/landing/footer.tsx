@@ -1,5 +1,4 @@
-import { Leaf } from "lucide-react";
-import { SiTwitter, SiLinkedin, SiInstagram } from "react-icons/si";
+import { Leaf, Twitter, Linkedin, Instagram } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -25,7 +24,7 @@ export default function Footer() {
                 aria-label="Twitter"
                 data-testid="link-twitter"
               >
-                <SiTwitter className="h-6 w-6" />
+                <Twitter className="h-6 w-6" />
               </a>
               <a 
                 href="https://linkedin.com" 
@@ -35,7 +34,7 @@ export default function Footer() {
                 aria-label="LinkedIn"
                 data-testid="link-linkedin"
               >
-                <SiLinkedin className="h-6 w-6" />
+                <Linkedin className="h-6 w-6" />
               </a>
               <a 
                 href="https://instagram.com" 
@@ -45,7 +44,7 @@ export default function Footer() {
                 aria-label="Instagram"
                 data-testid="link-instagram"
               >
-                <SiInstagram className="h-6 w-6" />
+                <Instagram className="h-6 w-6" />
               </a>
             </div>
           </div>
