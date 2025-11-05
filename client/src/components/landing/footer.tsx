@@ -1,4 +1,5 @@
-import { Leaf, Twitter, Linkedin, Instagram } from "lucide-react";
+// Added Facebook icon to the import
+import { Leaf, Twitter, Linkedin, Instagram, Facebook } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -16,6 +17,17 @@ export default function Footer() {
               Unlocking the true science of cannabis by connecting lab data with real patient experiences.
             </p>
             <div className="flex gap-4">
+              {/* Added Facebook Link */}
+              <a 
+                href="https://www.facebook.com/" // Placeholder link, user should update this
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-primary transition-colors"
+                aria-label="Facebook"
+                data-testid="link-facebook"
+              >
+                <Facebook className="h-6 w-6" />
+              </a>
               <a 
                 href="https://twitter.com" 
                 target="_blank" 

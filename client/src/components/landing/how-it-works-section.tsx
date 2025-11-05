@@ -1,26 +1,27 @@
 import { Card } from "@/components/ui/card";
 import { MessageSquare, Network, Users } from "lucide-react";
 
-const steps = [
-  {
-    number: 1,
-    icon: MessageSquare,
-    title: "Share Your Experience",
-    description: "Tell us about the cannabis products you've used and the effects you experienced. Your insights are the missing piece of the puzzle."
-  },
-  {
-    number: 2,
-    icon: Network,
-    title: "We Connect the Dots",
-    description: "Our system links your experience to the exact chemical profile (cannabinoids and terpenes) from lab reports, building a comprehensive database."
-  },
-  {
-    number: 3,
-    icon: Users,
-    title: "Everyone Benefits",
-    description: "The community gains access to data-driven insights about what really works. Find products that match your needs based on real science and real experiences."
-  }
-];
+// The old steps data, kept for reference if needed
+// const steps = [
+//   {
+//     number: 1,
+//     icon: MessageSquare,
+//     title: "Share Your Experience",
+//     description: "Tell us about the cannabis products you've used and the effects you experienced. Your insights are the missing piece of the puzzle."
+//   },
+//   {
+//     number: 2,
+//     icon: Network,
+//     title: "We Connect the Dots",
+//     description: "Our system links your experience to the exact chemical profile (cannabinoids and terpenes) from lab reports, building a comprehensive database."
+//   },
+//   {
+//     number: 3,
+//     icon: Users,
+//     title: "Everyone Benefits",
+//     description: "The community gains access to data-driven insights about what really works. Find products that match your needs based on real science and real experiences."
+//   }
+// ];
 
 export default function HowItWorksSection() {
   return (
@@ -38,11 +39,21 @@ export default function HowItWorksSection() {
           Join thousands in building the world's first comprehensive cannabis research database
         </p>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {steps.map((step) => (
-            <div key={step.number} className="relative">
-              <Card className="p-8 h-full" data-testid={`card-step-${step.number}`}>
-                <div className="flex items-center gap-4 mb-6">
+        {/* Replaced the 3-card grid with the 'How It Works' diagram */}
+        <div className="max-w-4xl mx-auto">
+          <img
+            src="/generated/Gemini_Generated_Image_tkxzeotkxzeotkxz (6).png"
+            alt="Diagram showing COA data and PRO data feeding into the CannaSpecific system, which produces insights, community benefits, and wellness."
+            className="w-full h-auto rounded-xl"
+            data-testid="img-how-it-works-diagram"
+          />
+        </div>
+
+        {/* // Original 3-card grid layout is now replaced by the image above
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {steps.map((step) => (
+              <div key={step.number} className="relative">
+                <Card className="p-8 h-full" data-testid={`card-step-${step.number}`}>
                   <div 
                     className="bg-primary text-primary-foreground rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold flex-shrink-0"
                     data-testid={`badge-step-${step.number}`}
@@ -70,7 +81,8 @@ export default function HowItWorksSection() {
               )}
             </div>
           ))}
-        </div>
+        </div> 
+        */}
       </div>
     </section>
   );

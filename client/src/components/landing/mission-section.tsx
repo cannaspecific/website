@@ -16,6 +16,20 @@ export default function MissionSection() {
         <p className="text-xl text-center text-muted-foreground mb-16 max-w-3xl mx-auto leading-relaxed" data-testid="text-mission-intro">
           CannaSpecific is on a mission to do what no one else has: aggregate and standardize this fragmented data.
         </p>
+
+        {/* --- Image path corrected from .jpg to .png --- */}
+        <div 
+          className="max-w-5xl mx-auto mb-16" 
+          data-testid="img-mission-banner"
+        >
+          <img
+            src="/generated/Gemini_Generated_Image_vra45xvra45xvra4.png"
+            alt="A visual metaphor for connecting scattered data points into a unified whole"
+            className="w-full h-auto rounded-xl shadow-lg object-cover"
+            style={{ maxHeight: '400px' }} // Keeps it in a nice banner shape
+          />
+        </div>
+        {/* --- END Image --- */}
         
         <div className="mb-16">
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 mb-8">

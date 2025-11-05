@@ -5,17 +5,23 @@ const problems = [
   {
     icon: Database,
     title: "Fragmented Data",
-    description: "Lab reports are scattered across dispensaries with different processes, making it nearly impossible to access the information you need to make informed decisions."
+    description: "Lab reports are scattered across dispensaries with different processes, making it nearly impossible to access the information you need to make informed decisions.",
+    // Updated image path to correct .png file
+    imageSrc: "/generated/Gemini_Generated_Image_tkxzeotkxzeotkxz (2).png"
   },
   {
     icon: Users,
     title: "Disconnected Experiences",
-    description: "Your real-world results are lost in the void. There's no system connecting what actually works for patients with the products available."
+    description: "Your real-world results are lost in the void. There's no system connecting what actually works for patients with the products available.",
+    // Updated image path to correct .png file
+    imageSrc: "/generated/Gemini_Generated_Image_tkxzeotkxzeotkxz (4).png"
   },
   {
     icon: TrendingDown,
     title: "Marketing Over Science",
-    description: "Catchy strain names and vague 'Indica/Sativa' labels dominate, while the actual chemical profiles that determine effects are buried or ignored."
+    description: "Catchy strain names and vague 'Indica/Sativa' labels dominate, while the actual chemical profiles that determine effects are buried or ignored.",
+    // Updated image path to correct .png file
+    imageSrc: "/generated/Gemini_Generated_Image_tkxzeotkxzeotkxz (5).png"
   }
 ];
 
@@ -39,20 +45,29 @@ export default function ProblemSection() {
           {problems.map((problem, index) => (
             <Card 
               key={index}
-              className="p-6 md:p-8"
+              className="overflow-hidden flex flex-col" // Added flex flex-col
               data-testid={`card-problem-${index}`}
             >
-              <problem.icon className="h-8 w-8 text-primary mb-4" data-testid={`icon-problem-${index}`} />
-              <h3 
-                className="text-xl font-semibold mb-3" 
-                style={{ fontFamily: 'var(--font-heading)' }}
-                data-testid={`text-problem-title-${index}`}
-              >
-                {problem.title}
-              </h3>
-              <p className="text-muted-foreground leading-relaxed" data-testid={`text-problem-desc-${index}`}>
-                {problem.description}
-              </p>
+              <img
+                src={problem.imageSrc}
+                alt={problem.title}
+                className="h-48 w-full object-contain p-4" // Changed to object-contain and added padding
+                data-testid={`img-problem-${index}`}
+              />
+              
+              <div className="p-6 md:p-8 flex flex-col flex-grow"> {/* Added flex flex-col flex-grow */}
+                <problem.icon className="h-8 w-8 text-primary mb-4" data-testid={`icon-problem-${index}`} />
+                <h3 
+                  className="text-xl font-semibold mb-3" 
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                  data-testid={`text-problem-title-${index}`}
+                >
+                  {problem.title}
+                </h3>
+                <p className="text-muted-foreground leading-relaxed" data-testid={`text-problem-desc-${index}`}>
+                  {problem.description}
+                </p>
+              </div>
             </Card>
           ))}
         </div>
