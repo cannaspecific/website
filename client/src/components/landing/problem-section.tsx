@@ -34,11 +34,11 @@ export default function ProblemSection() {
           style={{ fontFamily: 'var(--font-heading)' }}
           data-testid="text-problem-headline"
         >
-          The System is Broken
+          Unlocking Cannabis Clarity
         </h2>
         
         <p className="text-lg text-muted-foreground text-center mb-12 max-w-2xl mx-auto" data-testid="text-problem-intro">
-          The legal cannabis industry is sitting on a mountain of data, but no one is connecting the dots.
+          The legal cannabis industry is sitting on a mountain of data. We're here to connect the dots.
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -25,11 +25,11 @@ export default function HeroSection() {
           style={{ fontFamily: 'var(--font-heading)' }}
           data-testid="text-hero-headline"
         >
-          Tired of the Guessing Game?
+          Beyond the "Guessing Game"
         </h1>
         
         <p className="text-xl md:text-2xl text-white/90 mb-12 max-w-3xl mx-auto leading-relaxed" data-testid="text-hero-subheadline">
-          We're Ending "Strain Roulette." Join Us to Unlock the True Science of Cannabis.
+          We're replacing "Strain Roulette" with data-driven insights. Join Us to Unlock the True Science of Cannabis.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
