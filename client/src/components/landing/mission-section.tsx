@@ -16,6 +16,20 @@ export default function MissionSection() {
         <p className="text-xl text-center text-muted-foreground mb-16 max-w-3xl mx-auto leading-relaxed" data-testid="text-mission-intro">
           CannaSpecific is on a mission to do what no one else has: aggregate and standardize this fragmented data.
         </p>
+
+        {/* --- NEW IMAGE ADDED HERE --- */}
+        <div 
+          className="max-w-5xl mx-auto mb-16" 
+          data-testid="img-mission-banner"
+        >
+          <img
+            src="/generated/Gemini_Generated_Image_vra45xvra45xvra4.jpg"
+            alt="A visual metaphor for connecting scattered data points into a unified whole"
+            className="w-full h-auto rounded-xl shadow-lg object-cover"
+            style={{ maxHeight: '400px' }} // Keeps it in a nice banner shape
+          />
+        </div>
+        {/* --- END NEW IMAGE --- */}
         
         <div className="mb-16">
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 mb-8">
@@ -50,7 +64,7 @@ export default function MissionSection() {
             </h3>
             <p className="text-muted-foreground leading-relaxed mb-4" data-testid="text-aggregate-desc-1">
               We're collecting lab reports from dispensaries nationwide and creating a unified, accessible database of cannabis chemical profiles.
-            </p>
+            </q>
             <p className="text-muted-foreground leading-relaxed" data-testid="text-aggregate-desc-2">
               No more hunting through different systems or being locked into one dispensary's data.
             </p>
