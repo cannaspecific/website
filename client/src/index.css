@@ -258,6 +258,10 @@
     outline-offset: 3px;
   }
 
+  input, select, textarea, button, summary, a {
+    scroll-margin-top: 5.5rem;
+  }
+
   ::placeholder {
     color: #4e5953;
     opacity: 1;

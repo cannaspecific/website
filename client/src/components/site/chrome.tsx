@@ -135,7 +135,7 @@ export function SiteHeader() {
         </div>
       </div>
       {open && (
-        <nav id={menuId} className="border-t border-[#ddd4c4] px-5 py-4 lg:hidden" aria-label="Mobile">
+        <nav id={menuId} className="max-h-[calc(100dvh-4.5rem)] overflow-y-auto border-t border-[#ddd4c4] px-5 py-4 lg:hidden" aria-label="Mobile">
           <ul className="space-y-1">
             {NAV.map((item) => (
               <li key={item.href}>
