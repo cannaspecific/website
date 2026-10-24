@@ -1,21 +1,19 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle } from "lucide-react";
+import { SiteLayout, usePageTitle } from "@/components/site/chrome";
 
 export default function NotFound() {
+  usePageTitle("Page not found — CannaSpecific");
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-md mx-4">
-        <CardContent className="pt-6">
-          <div className="flex mb-4 gap-2">
-            <AlertCircle className="h-8 w-8 text-red-500" />
-            <h1 className="text-2xl font-bold text-gray-900">404 Page Not Found</h1>
-          </div>
-
-          <p className="mt-4 text-sm text-gray-600">
-            Did you forget to add the page to the router?
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+    <SiteLayout>
+      <div className="mx-auto max-w-xl px-5 py-24 md:px-8">
+        <p className="kicker text-[#0f4d3a]">404</p>
+        <h1 className="mt-3 font-heading text-4xl">That page is not on this site.</h1>
+        <p className="mt-4 leading-relaxed text-[#24312c]">
+          The address does not match a page we publish. The homepage still has the waitlist and the pilot form.
+        </p>
+        <a href="/" className="mt-8 inline-flex rounded-full bg-[#0f4d3a] px-5 py-3 text-sm font-semibold text-[#f7f4ec]">
+          Back to the homepage
+        </a>
+      </div>
+    </SiteLayout>
   );
 }
