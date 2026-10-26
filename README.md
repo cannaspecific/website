@@ -30,18 +30,26 @@ Copy `.env.example` to `.env` for local work. Set the same keys on the Render se
 | --- | --- | --- |
 | `DATABASE_URL` | Yes, to save forms | Neon/Postgres connection string. Without it the site still loads and the form returns a real error. |
 | `DATABASE_SSL` | No | `disable` for local Postgres. Remote hosts use SSL automatically. |
-| `SENDGRID_API_KEY` | Yes, to send mail | SendGrid API key. If it is missing, submissions are still saved and the UI says the email was not sent. |
-| `SENDGRID_FROM_EMAIL` | Yes, to send mail | Verified from-address. Placeholder addresses are refused. See the DNS note below. |
-| `SENDGRID_FROM_NAME` | No | Display name. Defaults to `CannaSpecific`. |
-| `NOTIFY_EMAIL` | No | Owner notification inbox. Defaults to `cannaspecific@gmail.com`. |
+| `RESEND_API_KEY` | Yes, to send mail | Resend API key. Preferred provider. If this and `SENDGRID_API_KEY` are both missing, submissions are still saved and the UI says the email was not sent. |
+| `EMAIL_FROM` | No | From address for Resend. Defaults to `CannaSpecific <hello@cannaspecific.com>`. Verify that domain in Resend. A bad value disables mail instead of falling through to SendGrid. |
+| `NOTIFY_EMAIL` | No | Owner notification inbox, and the reply-to address. Defaults to `cannaspecific@gmail.com`. |
+| `SENDGRID_API_KEY` | Only if Resend is unset | Fallback provider. Ignored while `RESEND_API_KEY` is set. Remove it once Resend is working so a zero-credit SendGrid account is not used later. |
+| `SENDGRID_FROM_EMAIL` | Only with the SendGrid key | Verified SendGrid from-address. Placeholder addresses are refused. See the DNS note below. |
+| `SENDGRID_FROM_NAME` | No | SendGrid display name. Defaults to `CannaSpecific`. |
 | `ADMIN_TOKEN` | Yes, for `/admin` | Secret for the submissions page and CSV export. Send it as `x-admin-token` or `Authorization: Bearer`. |
 | `PORT` | Set by Render | Listen port. Local default is `5000`. |
 | `RATE_LIMIT_MAX` | No | Form posts allowed per IP per window. Default `8`. |
 | `RATE_LIMIT_WINDOW_MS` | No | Rate-limit window. Default 10 minutes. |
 
+## Email
+
+Resend is used when `RESEND_API_KEY` is set. Otherwise SendGrid is used when `SENDGRID_API_KEY` is set. If neither key is set, both the confirmation and the owner notice are recorded as `skipped`. The row is still saved. The form says the confirmation could not be sent. Provider errors, including Resend `Maximum credits exceeded`, are stored on the row as `failed` and are not thrown.
+
+The default Resend from-address is `CannaSpecific <hello@cannaspecific.com>`. Resend must verify `cannaspecific.com` before that address can deliver. The existing SendGrid CNAMEs are on `www` only and do not authenticate Resend.
+
 ## SendGrid and DNS
 
-Live DNS (checked October 24, 2026) authenticates **www.cannaspecific.com**, not the apex:
+This section applies only to the SendGrid fallback. Live DNS (checked October 24, 2026) authenticates **www.cannaspecific.com**, not the apex:
 
 - `em17.www.cannaspecific.com` → `u57139562.wl063.sendgrid.net`
 - `s1._domainkey.www.cannaspecific.com` → `s1.domainkey.u57139562.wl063.sendgrid.net`
@@ -81,7 +89,7 @@ export DATABASE_SSL=disable
 npm test
 ```
 
-`server/submission-flow.test.ts` posts a waitlist signup, reads the row back from Postgres, checks dedupe, invalid email, the honeypot, the partner form, the locked admin list, CSV export, and the rate limit. It unsets `SENDGRID_API_KEY` so the test never sends mail, and it asserts the row is still saved with `email_status = skipped`.
+`server/submission-flow.test.ts` posts a waitlist signup, reads the row back from Postgres, checks dedupe, invalid email, the honeypot, the partner form, the locked admin list, CSV export, and the rate limit. It unsets `RESEND_API_KEY`, `EMAIL_FROM`, and `SENDGRID_API_KEY` so the test never sends mail, and it asserts the row is still saved with `email_status = skipped`. Resend itself is covered in `server/email.test.ts` with a mocked HTTP client.
 
 ## Compliance notes on the copy
 

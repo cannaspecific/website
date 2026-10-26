@@ -7,20 +7,58 @@ export type DeliveryState = {
 };
 
 export type MailConfig =
-  | { ok: true; apiKey: string; from: string; fromName: string; notify: string }
+  | { ok: true; provider: "resend"; apiKey: string; from: string; notify: string }
+  | { ok: true; provider: "sendgrid"; apiKey: string; from: string; fromName: string; notify: string }
   | { ok: false; reason: string; notify: string };
 
-const DEFAULT_NOTIFY = "cannaspecific@gmail.com";
-let configuredKey: string | null = null;
+export const DEFAULT_EMAIL_FROM = "CannaSpecific <hello@cannaspecific.com>";
+export const DEFAULT_NOTIFY = "cannaspecific@gmail.com";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PLACEHOLDER_RE = /YOUR_VERIFIED|example\.(com|org|net)$/i;
+
+let configuredSendGridKey: string | null = null;
+
+function isUsableEmail(value: string): boolean {
+  return EMAIL_RE.test(value) && !PLACEHOLDER_RE.test(value);
+}
+
+function parseFromAddress(
+  value: string,
+): { ok: true; display: string } | { ok: false; reason: string } {
+  const trimmed = value.trim();
+  const named = trimmed.match(/^(.+?)\s*<([^<>]+)>$/);
+  const email = named ? named[2].trim() : trimmed;
+  const name = named ? named[1].trim().replace(/^"|"$/g, "") : "";
+  if (!isUsableEmail(email)) {
+    return { ok: false, reason: `EMAIL_FROM (${trimmed}) is not a usable sender.` };
+  }
+  return { ok: true, display: name ? `${name} <${email}>` : email };
+}
 
 export function resolveMailConfig(env: NodeJS.ProcessEnv = process.env): MailConfig {
   const notify = env.NOTIFY_EMAIL?.trim() || DEFAULT_NOTIFY;
+  if (!EMAIL_RE.test(notify)) {
+    return { ok: false, notify, reason: `NOTIFY_EMAIL (${notify}) is not a valid email address.` };
+  }
+
+  const resendKey = env.RESEND_API_KEY?.trim() ?? "";
+  if (resendKey) {
+    const fromSource = env.EMAIL_FROM?.trim() ? env.EMAIL_FROM : DEFAULT_EMAIL_FROM;
+    const parsed = parseFromAddress(fromSource);
+    if (!parsed.ok) return { ok: false, notify, reason: parsed.reason };
+    return { ok: true, provider: "resend", apiKey: resendKey, from: parsed.display, notify };
+  }
+
   const apiKey = env.SENDGRID_API_KEY?.trim() ?? "";
   const from = env.SENDGRID_FROM_EMAIL?.trim() ?? "";
   const fromName = env.SENDGRID_FROM_NAME?.trim() || "CannaSpecific";
-
   if (!apiKey) {
-    return { ok: false, notify, reason: "SENDGRID_API_KEY is not set." };
+    return {
+      ok: false,
+      notify,
+      reason: "RESEND_API_KEY is not set and SENDGRID_API_KEY is not set.",
+    };
   }
   if (!from) {
     return {
@@ -29,24 +67,26 @@ export function resolveMailConfig(env: NodeJS.ProcessEnv = process.env): MailCon
       reason: "SENDGRID_FROM_EMAIL is not set. Refusing to send from a placeholder address.",
     };
   }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(from) || /YOUR_VERIFIED|example\.(com|org|net)$/i.test(from)) {
+  if (!isUsableEmail(from)) {
     return {
       ok: false,
       notify,
       reason: `SENDGRID_FROM_EMAIL (${from}) is not a usable sender. Use an address on the SendGrid-authenticated domain.`,
     };
   }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(notify)) {
-    return { ok: false, notify, reason: `NOTIFY_EMAIL (${notify}) is not a valid email address.` };
-  }
-  return { ok: true, apiKey, from, fromName, notify };
+  return { ok: true, provider: "sendgrid", apiKey, from, fromName, notify };
 }
 
 export function describeMailConfig(env: NodeJS.ProcessEnv = process.env): string {
   const config = resolveMailConfig(env);
   if (!config.ok) return `Email disabled: ${config.reason} Owner notices would go to ${config.notify}.`;
+  if (config.provider === "resend") {
+    const sendgridAlsoSet = Boolean(env.SENDGRID_API_KEY?.trim());
+    const unused = sendgridAlsoSet ? " SENDGRID_API_KEY is also set and will not be used." : "";
+    return `Email enabled via Resend. From ${config.from}. Owner notices to ${config.notify}.${unused}`;
+  }
   const domain = config.from.split("@")[1];
-  return `Email enabled. From ${config.from} (${domain}). Owner notices to ${config.notify}.`;
+  return `Email enabled via SendGrid. From ${config.from} (${domain}). Owner notices to ${config.notify}.`;
 }
 
 function errorText(error: unknown): string {
@@ -57,6 +97,11 @@ function errorText(error: unknown): string {
   }
   if (error instanceof Error) return error.message.slice(0, 2000);
   return "Unknown email error";
+}
+
+function redact(detail: string, secret: string): string {
+  if (!secret) return detail.slice(0, 2000);
+  return detail.split(secret).join("[redacted]").slice(0, 2000);
 }
 
 function roleLabel(role: string | null): string {
@@ -129,13 +174,49 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
-async function sendOne(
-  config: Extract<MailConfig, { ok: true }>,
+async function sendViaResend(
+  config: Extract<MailConfig, { ok: true; provider: "resend" }>,
+  message: { to: string; subject: string; text: string; html: string },
+  fetchImpl: typeof fetch,
+): Promise<DeliveryState> {
+  try {
+    const response = await fetchImpl("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: config.from,
+        to: [message.to],
+        reply_to: config.notify,
+        subject: message.subject,
+        text: message.text,
+        html: message.html,
+      }),
+    });
+    if (!response.ok) {
+      const body = await response.text();
+      const detail = redact(`Resend ${response.status} ${body}`.trim(), config.apiKey);
+      console.error(`Email to ${message.to} failed: ${detail}`);
+      return { status: "failed", error: detail };
+    }
+    return { status: "sent", error: null };
+  } catch (error) {
+    const messageText = error instanceof Error ? error.message : "Unknown email error";
+    const detail = redact(`Resend ${messageText}`, config.apiKey);
+    console.error(`Email to ${message.to} failed: ${detail}`);
+    return { status: "failed", error: detail };
+  }
+}
+
+async function sendViaSendGrid(
+  config: Extract<MailConfig, { ok: true; provider: "sendgrid" }>,
   message: { to: string; subject: string; text: string; html: string },
 ): Promise<DeliveryState> {
-  if (configuredKey !== config.apiKey) {
+  if (configuredSendGridKey !== config.apiKey) {
     sgMail.setApiKey(config.apiKey);
-    configuredKey = config.apiKey;
+    configuredSendGridKey = config.apiKey;
   }
   try {
     await sgMail.send({
@@ -148,7 +229,7 @@ async function sendOne(
     });
     return { status: "sent", error: null };
   } catch (error) {
-    const detail = errorText(error);
+    const detail = redact(errorText(error), config.apiKey);
     console.error(`Email to ${message.to} failed: ${detail}`);
     return { status: "failed", error: detail };
   }
@@ -157,6 +238,8 @@ async function sendOne(
 export async function deliverSubmissionEmails(
   submission: Submission,
   which: { confirmation?: boolean; notification?: boolean } = {},
+  env: NodeJS.ProcessEnv = process.env,
+  fetchImpl: typeof fetch = fetch,
 ): Promise<{
   confirmation: DeliveryState;
   notification: DeliveryState;
@@ -168,7 +251,7 @@ export async function deliverSubmissionEmails(
     error: null,
   });
 
-  const config = resolveMailConfig();
+  const config = resolveMailConfig(env);
   if (!config.ok) {
     console.error(`Email skipped for submission ${submission.id}: ${config.reason}`);
     return {
@@ -182,16 +265,14 @@ export async function deliverSubmissionEmails(
   }
 
   const confirmation = sendConfirmation
-    ? await sendOne(config, {
-        to: submission.email,
-        ...confirmationCopy(submission),
-      })
+    ? await (config.provider === "resend"
+        ? sendViaResend(config, { to: submission.email, ...confirmationCopy(submission) }, fetchImpl)
+        : sendViaSendGrid(config, { to: submission.email, ...confirmationCopy(submission) }))
     : untouched(submission.emailStatus);
   const notification = sendNotification
-    ? await sendOne(config, {
-        to: config.notify,
-        ...notificationCopy(submission),
-      })
+    ? await (config.provider === "resend"
+        ? sendViaResend(config, { to: config.notify, ...notificationCopy(submission) }, fetchImpl)
+        : sendViaSendGrid(config, { to: config.notify, ...notificationCopy(submission) }))
     : untouched(submission.notifyStatus);
 
   if (confirmation.status === "sent") {
