@@ -8,6 +8,8 @@ process.env.DATABASE_URL =
 process.env.DATABASE_SSL = "disable";
 process.env.NODE_ENV = "test";
 process.env.ADMIN_TOKEN = "test-admin-token";
+delete process.env.RESEND_API_KEY;
+delete process.env.EMAIL_FROM;
 delete process.env.SENDGRID_API_KEY;
 delete process.env.SENDGRID_FROM_EMAIL;
 
