@@ -42,7 +42,12 @@ function SectionLink({
         if (!target) return;
         event.preventDefault();
         target.scrollIntoView({ behavior: "smooth", block: "start" });
-        history.pushState(null, "", `/#${id}`);
+        const next = `/#${id}`;
+        if (`${window.location.pathname}${window.location.hash}` !== next) {
+          history.pushState(null, "", next);
+        }
+        // pushState does not notify the signup form, which reads the hash to pick a mode.
+        window.dispatchEvent(new Event("hashchange"));
       }}
     >
       {children}
@@ -54,7 +59,13 @@ export function usePageTitle(title: string) {
   useEffect(() => {
     const previous = document.title;
     document.title = title;
-    window.scrollTo(0, 0);
+    const id = window.location.hash.replace(/^#/, "");
+    const target = id ? document.getElementById(id) : null;
+    if (target) {
+      target.scrollIntoView({ block: "start" });
+    } else {
+      window.scrollTo(0, 0);
+    }
     return () => {
       document.title = previous;
     };

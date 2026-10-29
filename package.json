@@ -8,7 +8,7 @@
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
-    "test": "tsx --test shared/schema.test.ts server/rate-limit.test.ts server/csv.test.ts server/admin-auth.test.ts server/email.test.ts server/robots.test.ts server/submission-flow.test.ts",
+    "test": "tsx --test shared/schema.test.ts shared/signup-audience.test.ts shared/submission-message.test.ts client/src/components/site/signup-form.test.tsx server/rate-limit.test.ts server/csv.test.ts server/admin-auth.test.ts server/email.test.ts server/robots.test.ts server/submission-flow.test.ts",
     "db:push": "drizzle-kit push"
   },
   "dependencies": {

@@ -7,6 +7,7 @@ import {
   type PartnerRequest,
   type WaitlistRequest,
 } from "@shared/requests";
+import { submissionSuccessMessage } from "@shared/submission-message";
 import { adminAuthorized, readProvidedAdminToken } from "./admin-auth";
 import { submissionsToCsv } from "./csv";
 import { ROBOTS_TXT } from "./robots";
@@ -85,22 +86,16 @@ async function saveAndNotify(input: NewSubmission, res: Response) {
   }
 
   const emailSent = current.emailStatus === "sent";
-  const savedLine = duplicate
-    ? input.kind === "partner"
-      ? "We already have a pilot inquiry for this email."
-      : "This email is already on the list."
-    : input.kind === "partner"
-      ? "Your pilot inquiry is saved."
-      : "You're on the list.";
-  const mailLine = emailSent
-    ? " We sent a confirmation email."
-    : " We saved it, but the confirmation email could not be sent.";
 
   res.status(duplicate ? 200 : 201).json({
     success: true,
     duplicate,
     emailSent,
-    message: `${savedLine}${mailLine}`,
+    message: submissionSuccessMessage({
+      kind: input.kind,
+      duplicate,
+      emailSent,
+    }),
   });
 }
 
