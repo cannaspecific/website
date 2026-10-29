@@ -1,6 +1,6 @@
 # CannaSpecific
 
-Early-stage site for CannaSpecific, a Florida-first company building software that relates cannabis lab certificates (COAs) to real-world reviews. The public site is a waitlist and a pilot inquiry. It is not a medical product and it does not sell cannabis.
+Early-stage site for CannaSpecific, a Florida-first company building software that relates cannabis lab certificates (COAs) to real-world reviews. The public site has one signup form: an individual waitlist and a business pilot inquiry. It is not a medical product and it does not sell cannabis.
 
 The app is a Vite/React client and an Express server in one Node process, so it fits a single Render free web service.
 
@@ -43,7 +43,7 @@ Copy `.env.example` to `.env` for local work. Set the same keys on the Render se
 
 ## Email
 
-Resend is used when `RESEND_API_KEY` is set. Otherwise SendGrid is used when `SENDGRID_API_KEY` is set. If neither key is set, both the confirmation and the owner notice are recorded as `skipped`. The row is still saved. The form says the confirmation could not be sent. Provider errors, including Resend `Maximum credits exceeded`, are stored on the row as `failed` and are not thrown.
+Resend is used when `RESEND_API_KEY` is set. Otherwise SendGrid is used when `SENDGRID_API_KEY` is set. If neither key is set, both the confirmation and the owner notice are recorded as `skipped`. The row is still saved. The form confirms the spot or inquiry was saved and does not call out the email failure. Provider errors, including Resend `Maximum credits exceeded`, are stored on the row as `failed` and are not thrown.
 
 The default Resend from-address is `CannaSpecific <hello@cannaspecific.com>`. Resend must verify `cannaspecific.com` before that address can deliver. The existing SendGrid CNAMEs are on `www` only and do not authenticate Resend.
 
@@ -64,12 +64,12 @@ What to set:
 3. `YOUR_VERIFIED_EMAIL@example.com` will be rejected. The server refuses that placeholder even if it is pasted into the env var.
 4. Replies are directed to `NOTIFY_EMAIL`.
 
-Until the from-address is a real sender on the authenticated domain, SendGrid will not deliver. Submissions are still stored. The form tells the person when the confirmation could not be sent. Failures are written to the Render logs and onto the submission row (`email_status`, `email_error`, `notify_status`, `notify_error`).
+Until the from-address is a real sender on the authenticated domain, SendGrid will not deliver. Submissions are still stored. The form confirms the submission was saved. Failures are written to the Render logs and onto the submission row (`email_status`, `email_error`, `notify_status`, `notify_error`).
 
 ## Forms and admin
 
-- `POST /api/waitlist` — consumer, dispensary, cultivator, or researcher. Optional company, state, and note.
-- `POST /api/partner` — business pilot inquiry. Separate from the waitlist, including when the email is the same.
+- `POST /api/waitlist` — individual mode on the homepage signup form: consumer, dispensary, cultivator, or researcher. Optional company, state, and note.
+- `POST /api/partner` — business mode on that same form (company, state, business type, and what they want to try). Separate from the waitlist, including when the email is the same. `#partner` opens the form in business mode. `#waitlist` opens individual mode.
 - Duplicate email within a kind is kept once. A later try retries any email that has not already been sent.
 - Honeypot field `companyWebsite` plus an in-memory per-IP rate limit. The rate limit resets when a free Render instance sleeps, which is acceptable for one instance.
 - `GET /api/admin/submissions` and `GET /api/admin/submissions.csv` require `ADMIN_TOKEN`.

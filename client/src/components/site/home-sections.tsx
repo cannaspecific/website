@@ -67,7 +67,7 @@ const FAQS = [
   },
   {
     q: "Can you already predict effects?",
-    a: "Not as a product you can use today. The tiers below are coming-soon. The waitlist and pilot form are how we learn who wants this and what a first version should hold.",
+    a: "Not as a product you can use today. The tiers below are coming-soon. The signup form is how we learn who wants this and what a first version should hold.",
   },
   {
     q: "Why Florida first?",
@@ -75,11 +75,11 @@ const FAQS = [
   },
   {
     q: "Who can join?",
-    a: "Adults 21 and older: consumers, dispensary staff, cultivators, and researchers. Businesses that want a pilot use the separate inquiry form.",
+    a: "Adults 21 and older. Individuals join the list. Dispensaries, cultivators, and researchers who want a pilot choose “I'm a business” on the same signup form.",
   },
   {
     q: "What happens to my email?",
-    a: "It is stored in our database. If email delivery is configured, you get a confirmation and we get a notice. If delivery fails, the signup is still kept and the form says so. Details are in the privacy policy. Write cannaspecific@gmail.com to be removed.",
+    a: "It is stored in our database. If email delivery is configured, you get a confirmation and we get a notice. If a confirmation is delayed, the signup is still kept. Details are in the privacy policy. Write cannaspecific@gmail.com to be removed.",
   },
 ];
 
@@ -303,7 +303,7 @@ export function About() {
             We are building toward effect patterns that start from chemistry and from what people report. We are not a clinic, a dispensary, or a lab. We do not invent customer counts, testimonials, or partner logos to look further along than we are.
           </p>
           <p>
-            If you want in early, join the list. If you operate a business and want to shape a pilot, use the inquiry form.
+            If you want in early, <a className="font-semibold underline underline-offset-4" href="/#waitlist">join the list</a>. If you operate a business and want to shape a pilot, choose “I'm a business” on <a className="font-semibold underline underline-offset-4" href="/#partner">that same form</a>.
           </p>
         </div>
       </div>

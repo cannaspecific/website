@@ -7,7 +7,7 @@ export default function Privacy() {
       <PageIntro
         kicker="Privacy"
         title="What we collect, and what we do with it."
-        lede="This policy covers cannaspecific.com. It is written for the waitlist and the pilot form. It is not a description of a future product's data practices."
+        lede="This policy covers cannaspecific.com. It is written for the signup form, including the waitlist and business pilot inquiries. It is not a description of a future product's data practices."
       />
       <article className="mx-auto max-w-3xl space-y-8 px-5 py-14 text-[#24312c] md:px-8">
         <section>

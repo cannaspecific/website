@@ -74,7 +74,8 @@ describe("submission flow", { concurrency: 1 }, () => {
     assert.equal(response.body.success, true);
     assert.equal(response.body.duplicate, false);
     assert.equal(response.body.emailSent, false);
-    assert.match(response.body.message, /could not be sent/);
+    assert.equal(response.body.message, "You're on the list! We saved your spot.");
+    assert.doesNotMatch(response.body.message, /could not be sent/);
 
     const sql = getSql();
     const rows = await sql<
@@ -141,6 +142,9 @@ describe("submission flow", { concurrency: 1 }, () => {
     });
     assert.equal(response.status, 201);
     assert.equal(response.body.success, true);
+    assert.equal(response.body.emailSent, false);
+    assert.equal(response.body.message, "We saved your inquiry. We'll read it and reply when we can.");
+    assert.doesNotMatch(response.body.message, /could not be sent/);
     const sql = getSql();
     const rows = await sql`SELECT kind FROM submissions WHERE email = 'test-avery@example.com' ORDER BY kind`;
     assert.deepEqual(rows.map((row) => row.kind), ["partner", "waitlist"]);
