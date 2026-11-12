@@ -26,6 +26,7 @@ describe("unified signup form", () => {
     assert.match(html, /I am a/);
     assert.match(html, /Join the list/);
     assert.match(html, /data-signup-audience="individual"/);
+    assert.match(html, /data-signup-phase="editing"/);
   });
 
   it("reveals the business pilot fields and hides the individual role list", () => {
@@ -37,6 +38,7 @@ describe("unified signup form", () => {
     assert.match(html, /Research group/);
     assert.match(html, /Send the inquiry/);
     assert.match(html, /data-signup-audience="business"/);
+    assert.match(html, /data-signup-phase="editing"/);
     assert.doesNotMatch(html, /<legend[^>]*>I am a<\/legend>/);
     assert.doesNotMatch(html, /Send me occasional product updates/);
     assert.doesNotMatch(html, />Join the list</);

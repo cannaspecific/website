@@ -1,8 +1,9 @@
 import sgMail from "@sendgrid/mail";
+import { readDeliveryStatus, type DeliveryStatus } from "@shared/delivery-status";
 import type { Submission } from "@shared/schema";
 
 export type DeliveryState = {
-  status: "sent" | "failed" | "skipped";
+  status: DeliveryStatus;
   error: string | null;
 };
 
@@ -246,9 +247,9 @@ export async function deliverSubmissionEmails(
 }> {
   const sendConfirmation = which.confirmation !== false;
   const sendNotification = which.notification !== false;
-  const untouched = (status: Submission["emailStatus"]): DeliveryState => ({
-    status: status === "sent" || status === "failed" || status === "skipped" ? status : "skipped",
-    error: null,
+  const unchanged = (status: string | null, error: string | null): DeliveryState => ({
+    status: readDeliveryStatus(status),
+    error,
   });
 
   const config = resolveMailConfig(env);
@@ -257,10 +258,10 @@ export async function deliverSubmissionEmails(
     return {
       confirmation: sendConfirmation
         ? { status: "skipped", error: config.reason }
-        : untouched(submission.emailStatus),
+        : unchanged(submission.emailStatus, submission.emailError),
       notification: sendNotification
         ? { status: "skipped", error: config.reason }
-        : untouched(submission.notifyStatus),
+        : unchanged(submission.notifyStatus, submission.notifyError),
     };
   }
 
@@ -268,12 +269,12 @@ export async function deliverSubmissionEmails(
     ? await (config.provider === "resend"
         ? sendViaResend(config, { to: submission.email, ...confirmationCopy(submission) }, fetchImpl)
         : sendViaSendGrid(config, { to: submission.email, ...confirmationCopy(submission) }))
-    : untouched(submission.emailStatus);
+    : unchanged(submission.emailStatus, submission.emailError);
   const notification = sendNotification
     ? await (config.provider === "resend"
         ? sendViaResend(config, { to: config.notify, ...notificationCopy(submission) }, fetchImpl)
         : sendViaSendGrid(config, { to: config.notify, ...notificationCopy(submission) }))
-    : untouched(submission.notifyStatus);
+    : unchanged(submission.notifyStatus, submission.notifyError);
 
   if (confirmation.status === "sent") {
     console.log(`Confirmation email sent for submission ${submission.id}.`);

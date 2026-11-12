@@ -179,4 +179,36 @@ describe("resend delivery", () => {
     assert.equal(result.notification.status, "skipped");
     assert.match(result.confirmation.error ?? "", /RESEND_API_KEY is not set/);
   });
+
+  it("keeps a channel that was not sent this time, including pending", async () => {
+    let calls = 0;
+    const fetchImpl: typeof fetch = async () => {
+      calls += 1;
+      return new Response(JSON.stringify({ id: "email_123" }), { status: 200 });
+    };
+    const sent = await deliverSubmissionEmails(
+      { ...submission, emailStatus: "sent", emailError: "leave-me" },
+      { confirmation: false, notification: true },
+      { RESEND_API_KEY: "re_test_key" },
+      fetchImpl,
+    );
+    assert.equal(calls, 1);
+    assert.equal(sent.confirmation.status, "sent");
+    assert.equal(sent.confirmation.error, "leave-me");
+    assert.equal(sent.notification.status, "sent");
+
+    const fetchIfCalled: typeof fetch = async () => {
+      throw new Error("no email should be sent");
+    };
+    const pending = await deliverSubmissionEmails(
+      submission,
+      { confirmation: false, notification: false },
+      {},
+      fetchIfCalled,
+    );
+    assert.equal(pending.confirmation.status, "pending");
+    assert.equal(pending.confirmation.error, null);
+    assert.equal(pending.notification.status, "pending");
+    assert.equal(pending.notification.error, null);
+  });
 });

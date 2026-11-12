@@ -1,5 +1,10 @@
-import { useEffect, useState } from "react";
-import type { AdminSubmission } from "@shared/schema";
+import { useEffect, useReducer, useRef, useState } from "react";
+import {
+  adminSessionReducer,
+  adminSessionRows,
+  initialAdminSession,
+  type AdminSessionEvent,
+} from "@shared/admin-session-machine";
 import { SiteLayout, usePageTitle } from "@/components/site/chrome";
 
 const TOKEN_KEY = "cs_admin_token";
@@ -7,9 +12,14 @@ const TOKEN_KEY = "cs_admin_token";
 export default function Admin() {
   usePageTitle("Submissions — CannaSpecific");
   const [token, setToken] = useState("");
-  const [rows, setRows] = useState<AdminSubmission[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [session, dispatch] = useReducer(adminSessionReducer, initialAdminSession);
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
+
+  const send = (event: AdminSessionEvent) => {
+    sessionRef.current = adminSessionReducer(sessionRef.current, event);
+    dispatch(event);
+  };
 
   useEffect(() => {
     const meta = document.createElement("meta");
@@ -24,49 +34,55 @@ export default function Admin() {
   }, []);
 
   async function load(nextToken = token) {
-    setLoading(true);
-    setError(null);
+    if (adminSessionReducer(sessionRef.current, { type: "load" }) === sessionRef.current) return;
+    send({ type: "load" });
     try {
       const response = await fetch("/api/admin/submissions", {
         headers: { "x-admin-token": nextToken },
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) {
-        setRows(null);
-        setError(body?.message || "Could not load submissions.");
+        send({ type: "loadFailure", message: body?.message || "Could not load submissions." });
         return;
       }
       sessionStorage.setItem(TOKEN_KEY, nextToken);
-      setRows(body.data ?? []);
+      send({ type: "loadSuccess", rows: Array.isArray(body?.data) ? body.data : [] });
     } catch {
-      setError("Could not reach the server.");
-    } finally {
-      setLoading(false);
+      send({ type: "loadFailure", message: "Could not reach the server." });
     }
   }
 
   async function downloadCsv() {
-    setError(null);
-    const response = await fetch("/api/admin/submissions.csv", {
-      headers: { authorization: `Bearer ${token}` },
-    });
-    if (!response.ok) {
-      const body = await response.json().catch(() => null);
-      setError(body?.message || "Could not export CSV.");
-      return;
+    if (adminSessionReducer(sessionRef.current, { type: "export" }) === sessionRef.current) return;
+    send({ type: "export" });
+    try {
+      const response = await fetch("/api/admin/submissions.csv", {
+        headers: { authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        send({ type: "exportFailure", message: body?.message || "Could not export CSV." });
+        return;
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "cannaspecific-submissions.csv";
+      link.click();
+      URL.revokeObjectURL(url);
+      send({ type: "exportSuccess" });
+    } catch {
+      send({ type: "exportFailure", message: "Could not reach the server." });
     }
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "cannaspecific-submissions.csv";
-    link.click();
-    URL.revokeObjectURL(url);
   }
+
+  const rows = adminSessionRows(session);
+  const busy = session.status === "loading" || session.status === "exporting";
 
   return (
     <SiteLayout>
-      <div className="mx-auto max-w-6xl px-5 py-12 md:px-8">
+      <div className="mx-auto max-w-6xl px-5 py-12 md:px-8" data-admin-state={session.status}>
         <p className="kicker text-[#0f4d3a]">Private</p>
         <h1 className="mt-3 font-heading text-4xl">Submissions</h1>
         <p className="mt-3 max-w-2xl text-[#24312c]">
@@ -91,22 +107,27 @@ export default function Admin() {
           </label>
           <button
             type="submit"
-            disabled={loading || token.trim().length === 0}
+            disabled={busy || token.trim().length === 0}
+            aria-busy={session.status === "loading"}
             className="rounded-full bg-[#0f4d3a] px-5 py-3 text-sm font-semibold text-[#f7f4ec] disabled:opacity-60 sm:self-end"
           >
-            {loading ? "Loading…" : "View submissions"}
+            {session.status === "loading" ? "Loading…" : "View submissions"}
           </button>
           <button
             type="button"
-            disabled={!rows || token.trim().length === 0}
+            disabled={busy || rows === null || token.trim().length === 0}
+            aria-busy={session.status === "exporting"}
             onClick={() => void downloadCsv()}
             className="rounded-full border border-[#0f4d3a] px-5 py-3 text-sm font-semibold disabled:opacity-60 sm:self-end"
           >
-            Export CSV
+            {session.status === "exporting" ? "Exporting…" : "Export CSV"}
           </button>
         </form>
-        {error && (
-          <p role="alert" className="mt-4 text-sm text-[#7a2e24]">{error}</p>
+        {session.status === "error" && (
+          <p role="alert" className="mt-4 text-sm text-[#7a2e24]">{session.message}</p>
+        )}
+        {session.status === "loading" && rows === null && (
+          <p role="status" className="mt-8 text-[#24312c]">Loading submissions…</p>
         )}
         {rows && rows.length === 0 && (
           <p className="mt-8 text-[#24312c]">No submissions yet.</p>

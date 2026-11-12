@@ -7,6 +7,7 @@ import {
   type PartnerRequest,
   type WaitlistRequest,
 } from "@shared/requests";
+import { needsDelivery, nextDeliveryRecord, recordedOutcome } from "@shared/delivery-status";
 import { submissionSuccessMessage } from "@shared/submission-message";
 import { adminAuthorized, readProvidedAdminToken } from "./admin-auth";
 import { submissionsToCsv } from "./csv";
@@ -66,19 +67,39 @@ async function saveAndNotify(input: NewSubmission, res: Response) {
   }
 
   let current = submission;
-  const sendConfirmation = current.emailStatus !== "sent";
-  const sendNotification = current.notifyStatus !== "sent";
+  const sendConfirmation = needsDelivery(current.emailStatus);
+  const sendNotification = needsDelivery(current.notifyStatus);
   if (sendConfirmation || sendNotification) {
     try {
       const delivery = await deliverSubmissionEmails(current, {
         confirmation: sendConfirmation,
         notification: sendNotification,
       });
+      const email = nextDeliveryRecord(
+        { status: current.emailStatus, error: current.emailError },
+        sendConfirmation
+          ? {
+              attempted: true,
+              outcome: recordedOutcome(delivery.confirmation.status),
+              error: delivery.confirmation.error,
+            }
+          : { attempted: false },
+      );
+      const notify = nextDeliveryRecord(
+        { status: current.notifyStatus, error: current.notifyError },
+        sendNotification
+          ? {
+              attempted: true,
+              outcome: recordedOutcome(delivery.notification.status),
+              error: delivery.notification.error,
+            }
+          : { attempted: false },
+      );
       current = await updateDelivery(current.id, {
-        emailStatus: delivery.confirmation.status,
-        emailError: sendConfirmation ? delivery.confirmation.error : current.emailError,
-        notifyStatus: delivery.notification.status,
-        notifyError: sendNotification ? delivery.notification.error : current.notifyError,
+        emailStatus: email.status,
+        emailError: email.error,
+        notifyStatus: notify.status,
+        notifyError: notify.error,
       });
     } catch (error) {
       console.error(`Submission ${current.id} was saved, but email status was not recorded.`, error);
