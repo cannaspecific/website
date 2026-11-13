@@ -1,4 +1,5 @@
 import { and, desc, eq, sql } from "drizzle-orm";
+import { mergeDeliveryUpdate, type DeliveryStatus } from "@shared/delivery-status";
 import {
   interests,
   submissions,
@@ -20,9 +21,9 @@ export type NewSubmission = {
 };
 
 export type DeliveryUpdate = {
-  emailStatus: "sent" | "failed" | "skipped";
+  emailStatus: DeliveryStatus;
   emailError: string | null;
-  notifyStatus: "sent" | "failed" | "skipped";
+  notifyStatus: DeliveryStatus;
   notifyError: string | null;
 };
 
@@ -91,20 +92,37 @@ export async function createSubmission(
 
 export async function updateDelivery(id: string, update: DeliveryUpdate): Promise<Submission> {
   const db = getDb();
-  const rows = await db
-    .update(submissions)
-    .set({
-      emailStatus: update.emailStatus,
-      emailError: update.emailError,
-      notifyStatus: update.notifyStatus,
-      notifyError: update.notifyError,
-    })
-    .where(eq(submissions.id, id))
-    .returning();
-  if (!rows[0]) {
-    throw new Error(`Submission ${id} disappeared before email status was saved.`);
-  }
-  return rows[0];
+  // Lock the row, then apply the delivery machine, so a slower request cannot
+  // replace `sent` with a later failure.
+  return db.transaction(async (tx) => {
+    const locked = await tx.select().from(submissions).where(eq(submissions.id, id)).for("update");
+    const current = locked[0];
+    if (!current) {
+      throw new Error(`Submission ${id} disappeared before email status was saved.`);
+    }
+    const email = mergeDeliveryUpdate(
+      { status: current.emailStatus, error: current.emailError },
+      { status: update.emailStatus, error: update.emailError },
+    );
+    const notify = mergeDeliveryUpdate(
+      { status: current.notifyStatus, error: current.notifyError },
+      { status: update.notifyStatus, error: update.notifyError },
+    );
+    const rows = await tx
+      .update(submissions)
+      .set({
+        emailStatus: email.status,
+        emailError: email.error,
+        notifyStatus: notify.status,
+        notifyError: notify.error,
+      })
+      .where(eq(submissions.id, id))
+      .returning();
+    if (!rows[0]) {
+      throw new Error(`Submission ${id} disappeared before email status was saved.`);
+    }
+    return rows[0];
+  });
 }
 
 function mapSubmission(row: Submission): AdminSubmission {

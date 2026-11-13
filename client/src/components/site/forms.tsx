@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useReducer, useRef } from "react";
 import { useForm, type UseFormRegister } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -16,14 +16,20 @@ import {
   type SignupAudience,
 } from "@shared/signup-audience";
 import { submissionSuccessCopy } from "@shared/submission-message";
+import {
+  initialSignupFormState,
+  signupFormReducer,
+  signupSubmitLabel,
+  type SignupFormEvent,
+  type SignupSubmission,
+} from "@shared/signup-form-machine";
 import { US_STATES } from "@/lib/us-states";
 
-type SubmissionResult = {
+type SubmissionResponse = {
   success: boolean;
   duplicate?: boolean;
   emailSent?: boolean;
   message: string;
-  audience: SignupAudience;
 };
 
 type SignupValues = {
@@ -71,7 +77,12 @@ function isWaitlistRole(role: string): role is WaitlistRequest["role"] {
   return (WAITLIST_ROLES as readonly string[]).includes(role);
 }
 
-async function postForm(url: string, data: unknown): Promise<SubmissionResult> {
+function landedAudience(submitted: SignupAudience): SignupAudience {
+  if (typeof window === "undefined") return submitted;
+  return audienceFromHash(window.location.hash) ?? submitted;
+}
+
+async function postForm(url: string, data: unknown): Promise<SubmissionResponse> {
   let response: Response;
   try {
     response = await fetch(url, {
@@ -93,7 +104,7 @@ async function postForm(url: string, data: unknown): Promise<SubmissionResult> {
         "We couldn't save your request. Nothing was stored. Please try again.",
     );
   }
-  return body as SubmissionResult;
+  return body as SubmissionResponse;
 }
 
 function ErrorText({ id, message }: { id: string; message?: string }) {
@@ -105,7 +116,7 @@ function ErrorText({ id, message }: { id: string; message?: string }) {
   );
 }
 
-function SuccessNote({ result, onReset }: { result: SubmissionResult; onReset: () => void }) {
+function SuccessNote({ result, onReset }: { result: SignupSubmission; onReset: () => void }) {
   const copy = submissionSuccessCopy({
     kind: result.audience === "business" ? "partner" : "waitlist",
     duplicate: Boolean(result.duplicate),
@@ -144,9 +155,11 @@ function Honeypot({ register }: { register: UseFormRegister<SignupValues> }) {
 
 function AudienceSwitch({
   audience,
+  disabled,
   onChange,
 }: {
   audience: SignupAudience;
+  disabled: boolean;
   onChange: (next: SignupAudience) => void;
 }) {
   return (
@@ -169,6 +182,7 @@ function AudienceSwitch({
               value={value}
               className="sr-only"
               checked={audience === value}
+              disabled={disabled}
               aria-describedby={value === "business" ? "signup-business-hint" : undefined}
               onChange={() => onChange(value)}
             />
@@ -188,35 +202,49 @@ type SignupFormProps = {
 };
 
 export function SignupForm({ initialAudience }: SignupFormProps) {
-  const [audience, setAudience] = useState<SignupAudience>(() => readInitialAudience(initialAudience));
-  const [result, setResult] = useState<SubmissionResult | null>(null);
-  const [serverError, setServerError] = useState<string | null>(null);
-  const audienceRef = useRef(audience);
-  audienceRef.current = audience;
+  const [phase, dispatch] = useReducer(
+    signupFormReducer,
+    initialAudience,
+    (audience: SignupAudience | undefined) => initialSignupFormState(readInitialAudience(audience)),
+  );
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
+  const audienceRef = useRef(phase.audience);
+  audienceRef.current = phase.audience;
   const selectAudienceRef = useRef<(next: SignupAudience) => void>(() => {});
+
+  const send = (event: SignupFormEvent) => {
+    phaseRef.current = signupFormReducer(phaseRef.current, event);
+    audienceRef.current = phaseRef.current.audience;
+    dispatch(event);
+  };
 
   const form = useForm<SignupValues>({
     resolver: async (values, context, options) => {
       const schema = audienceRef.current === "business" ? partnerRequestSchema : waitlistRequestSchema;
       return zodResolver(schema)(values, context, options);
     },
-    defaultValues: blankValues(audience),
+    defaultValues: blankValues(phase.audience),
   });
   const { register, handleSubmit, formState, reset, setValue, getValues, clearErrors } = form;
 
-  const selectAudience = (next: SignupAudience) => {
-    if (audienceRef.current !== next) {
-      const role = getValues("role");
-      if (next === "business") {
-        if (!isPartnerRole(role)) setValue("role", "dispensary");
-        if (!getValues("state")) setValue("state", "FL");
-      } else if (!isWaitlistRole(role)) {
-        setValue("role", "consumer");
-      }
-      clearErrors();
-      audienceRef.current = next;
-      setAudience(next);
+  const applyAudienceFields = (next: SignupAudience) => {
+    const role = getValues("role");
+    if (next === "business") {
+      if (!isPartnerRole(role)) setValue("role", "dispensary");
+      if (!getValues("state")) setValue("state", "FL");
+    } else if (!isWaitlistRole(role)) {
+      setValue("role", "consumer");
     }
+    clearErrors();
+  };
+
+  const selectAudience = (next: SignupAudience) => {
+    // The in-flight request keeps the fields that were submitted. A hash change
+    // during that time is applied when the request settles.
+    if (phaseRef.current.status === "submitting") return;
+    if (phaseRef.current.audience !== next) applyAudienceFields(next);
+    send({ type: "selectAudience", audience: next });
     if (typeof window === "undefined" || window.location.pathname !== "/") return;
     if (audienceFromHash(window.location.hash) === next) return;
     const hash = hashForAudience(next);
@@ -235,21 +263,40 @@ export function SignupForm({ initialAudience }: SignupFormProps) {
   }, []);
 
   const onSubmit = handleSubmit(async (values) => {
-    setServerError(null);
-    const mode = audienceRef.current;
+    const current = phaseRef.current;
+    if (current.status !== "editing" && current.status !== "error") return;
+    const mode = current.audience;
+    send({ type: "submit" });
     try {
       const saved = await postForm(signupEndpoint(mode), values);
-      setResult({ ...saved, audience: mode });
-      reset(blankValues(mode));
+      const landed = landedAudience(mode);
+      reset(blankValues(landed));
+      send({
+        type: "succeed",
+        audience: landed,
+        result: {
+          audience: mode,
+          duplicate: Boolean(saved.duplicate),
+          emailSent: saved.emailSent === true,
+          message: saved.message,
+        },
+      });
     } catch (error) {
-      setServerError(error instanceof Error ? error.message : "We couldn't save your request.");
+      const landed = landedAudience(mode);
+      if (landed !== mode) applyAudienceFields(landed);
+      send({
+        type: "fail",
+        audience: landed,
+        message: error instanceof Error ? error.message : "We couldn't save your request.",
+      });
     }
   });
 
-  const business = audience === "business";
+  const business = phase.audience === "business";
+  const submitting = phase.status === "submitting";
 
   return (
-    <section id="signup" className="relative scroll-mt-24 band-ink" aria-labelledby="signup-heading" data-signup-audience={audience}>
+    <section id="signup" className="relative scroll-mt-24 band-ink" aria-labelledby="signup-heading" data-signup-audience={phase.audience} data-signup-phase={phase.status}>
       <div id="waitlist" className="pointer-events-none absolute inset-x-0 top-0 scroll-mt-24" aria-hidden="true" />
       <div id="partner" className="pointer-events-none absolute inset-x-0 top-0 scroll-mt-24" aria-hidden="true" />
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-20 md:px-8 lg:grid-cols-12">
@@ -264,12 +311,12 @@ export function SignupForm({ initialAudience }: SignupFormProps) {
           </p>
         </div>
         <div className="lg:col-span-7">
-          {result ? (
-            <SuccessNote result={result} onReset={() => setResult(null)} />
+          {phase.status === "success" ? (
+            <SuccessNote result={phase.result} onReset={() => send({ type: "reset" })} />
           ) : (
             <form onSubmit={onSubmit} className="relative rounded-2xl bg-[#f7f4ec] p-6 text-[#14211c] md:p-8" noValidate>
               <Honeypot register={register} />
-              <AudienceSwitch audience={audience} onChange={selectAudience} />
+              <AudienceSwitch audience={phase.audience} disabled={submitting} onChange={selectAudience} />
 
               {business && (
                 <p className="mt-5">
@@ -451,19 +498,19 @@ export function SignupForm({ initialAudience }: SignupFormProps) {
                 <ErrorText id="signup-age-error" message={formState.errors.ageConfirmed?.message} />
               </div>
 
-              {serverError && (
+              {phase.status === "error" && (
                 <p role="alert" className="mt-5 rounded-md border border-[#e4c7c1] bg-[#fbf1ef] px-3 py-3 text-sm text-[#7a2e24]">
-                  {serverError}
+                  {phase.message}
                 </p>
               )}
 
               <button
                 type="submit"
-                disabled={formState.isSubmitting}
-                aria-busy={formState.isSubmitting}
+                disabled={submitting}
+                aria-busy={submitting}
                 className={`mt-6 w-full rounded-full px-5 py-3 text-base font-semibold text-[#f7f4ec] disabled:opacity-60 ${business ? "bg-[#101714]" : "bg-[#0f4d3a]"}`}
               >
-                {formState.isSubmitting ? "Saving…" : business ? "Send the inquiry" : "Join the list"}
+                {signupSubmitLabel(phase)}
               </button>
               <p className="mt-4 text-sm leading-relaxed text-[#3d4a44]">
                 {business

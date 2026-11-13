@@ -11,7 +11,7 @@ The app is a Vite/React client and an Express server in one Node process, so it 
 | `npm run dev` | API and client together, with reload |
 | `npm run build` | Vite client into `dist/public`, server bundle into `dist/index.js` |
 | `npm start` | Production server. Binds `0.0.0.0:$PORT` and creates the submissions table if it is missing |
-| `npm test` | Validation, email config, rate limit, and a Postgres submission test |
+| `npm test` | Validation, state machines, email config, rate limit, and a Postgres submission test |
 | `npm run check` | TypeScript |
 | `npm run db:push` | Optional drizzle-kit push. Not used on boot |
 
@@ -77,6 +77,10 @@ Until the from-address is a real sender on the authenticated domain, SendGrid wi
 - Older rows in the `interests` table show up in admin as legacy. They were stored, but that form never notified the owner. This deploy does not email those old addresses.
 
 The previous public `GET /api/interests` endpoint has been removed. It returned every submission without a token.
+
+## State machines
+
+Signup, the admin submissions page, and email delivery each have one explicit state machine: a `status` union and a pure reducer. States, transitions, and the pattern for a new machine are in [docs/state-machines.md](docs/state-machines.md).
 
 ## Local submission test
 
