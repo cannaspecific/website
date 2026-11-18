@@ -4,6 +4,7 @@ export const ROBOTS_TXT = `User-agent: *
 Allow: /
 
 Disallow: /admin
+Disallow: /coa
 Disallow: /api
 
 Sitemap: https://cannaspecific.com/sitemap.xml

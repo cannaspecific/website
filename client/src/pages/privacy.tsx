@@ -7,7 +7,7 @@ export default function Privacy() {
       <PageIntro
         kicker="Privacy"
         title="What we collect, and what we do with it."
-        lede="This policy covers cannaspecific.com. It is written for the signup form, including the waitlist and business pilot inquiries. It is not a description of a future product's data practices."
+        lede="This policy covers cannaspecific.com: the signup form and the private certificate reader. It is not a description of a future product's data practices."
       />
       <article className="mx-auto max-w-3xl space-y-8 px-5 py-14 text-[#24312c] md:px-8">
         <section>
@@ -24,6 +24,12 @@ export default function Privacy() {
           </p>
           <p className="mt-3 leading-relaxed">
             The site host records ordinary server logs, such as IP address, browser, and the page requested, to operate and protect the service. We use a hidden form field and a request limit to reduce spam. We do not run a third-party advertising tracker on this site.
+          </p>
+        </section>
+        <section>
+          <h2 className="font-heading text-2xl text-[#14211c]">Certificate beta</h2>
+          <p className="mt-3 leading-relaxed">
+            The private certificate page is limited to people with the admin token. If you upload a PDF, the server reads its text layer and then discards the file. The PDF is not stored. If you save a read, we store the parsed fields (names, batch, date, cannabinoid and terpene figures, panel status, warnings) in the same Postgres database. You can remove a saved read from that page. Sample certificates shipped with the page are invented and are not from a real laboratory.
           </p>
         </section>
         <section>
@@ -55,7 +61,7 @@ export default function Privacy() {
           <p className="mt-3 leading-relaxed">
             If this policy changes in a material way, we will update this page. The date below is the latest revision.
           </p>
-          <p className="mt-3 text-sm">Last updated October 24, 2026.</p>
+          <p className="mt-3 text-sm">Last updated November 18, 2026.</p>
         </section>
       </article>
     </SiteLayout>

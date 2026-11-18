@@ -111,6 +111,36 @@ Legacy interest rows are not in this machine. Admin shows them with a null statu
 
 Two overlapping requests can both send before either write lands. The lock stops the second write from erasing `sent`. It does not hold the row open while the mail provider is called.
 
+## Certificate beta
+
+`shared/coa-workspace-machine.ts`, used by `client/src/pages/coa.tsx`.
+
+The admin token and the 21+ checkbox are inputs. The machine is the unlock and the one-at-a-time read. The library holds at most 24 parsed certificates. Deleting a saved row is a request that dispatches `remove` only after it succeeds; a failed delete stays on the current state and the page shows the message beside the list.
+
+| State | What the page shows |
+| --- | --- |
+| `closed` | Age checkbox and token field |
+| `opening` | The same form, with the button labeled "Checking…" |
+| `denied` | The form plus the rejection |
+| `idle` | Upload, paste, samples, and the library |
+| `parsing` | The library stays up. The read button says "Reading…" |
+| `error` | The read error. The library stays up |
+
+| From | Event | To |
+| --- | --- | --- |
+| `closed` | `open` | `opening` |
+| `opening` | `openSuccess` | `idle` with that library |
+| `opening` | `openFailure` | `denied` |
+| `denied` | `open` | `opening` |
+| `idle` | `parse` | `parsing` |
+| `parsing` | `parseSuccess` | `idle`, new record first |
+| `parsing` | `parseFailure` | `error`, library unchanged |
+| `error` | `parse` | `parsing` |
+| `error` | `dismiss` | `idle` |
+| `idle` or `error` | `add` / `remove` | same status, library updated |
+
+A second `open` or `parse` while one is in flight is ignored. `openSuccess` is ignored unless the state is `opening`. `add` during `parsing` is ignored.
+
 ## Already explicit
 
 These are discriminated unions already. Do not wrap them in another reducer.

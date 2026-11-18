@@ -29,9 +29,24 @@ const CREATE_CREATED_IDX = `
 CREATE INDEX IF NOT EXISTS submissions_created_at_idx
   ON submissions (created_at DESC)`;
 
+const CREATE_COA_RECORDS = `
+CREATE TABLE IF NOT EXISTS coa_records (
+  id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
+  label text NOT NULL,
+  source_name text,
+  sample_data boolean NOT NULL DEFAULT false,
+  parsed jsonb NOT NULL,
+  created_at timestamp NOT NULL DEFAULT now()
+)`;
+
+const CREATE_COA_IDX = `
+CREATE INDEX IF NOT EXISTS coa_records_created_at_idx
+  ON coa_records (created_at DESC)`;
+
 let client: Sql | null = null;
 let db: PostgresJsDatabase<typeof schema> | null = null;
 let ready = false;
+let coaReady = false;
 
 export function databaseUrl(): string | undefined {
   const url = process.env.DATABASE_URL?.trim();
@@ -48,6 +63,10 @@ export function sslForDatabase(url: string): "require" | false {
 
 export function isDbReady(): boolean {
   return ready;
+}
+
+export function isCoaStoreReady(): boolean {
+  return ready && coaReady;
 }
 
 export function getDb(): PostgresJsDatabase<typeof schema> {
@@ -93,7 +112,16 @@ export async function initDb(): Promise<boolean> {
     await client.unsafe(CREATE_UNIQUE);
     await client.unsafe(CREATE_CREATED_IDX);
     ready = true;
-    console.log("Database schema ready (submissions table).");
+    try {
+      await client.unsafe(CREATE_COA_RECORDS);
+      await client.unsafe(CREATE_COA_IDX);
+      coaReady = true;
+      console.log("Database schema ready (submissions and coa_records).");
+    } catch (error) {
+      coaReady = false;
+      console.error("COA table initialization failed. Certificate saves are unavailable.", error);
+      console.log("Database schema ready (submissions table).");
+    }
     return true;
   } catch (error) {
     ready = false;
@@ -109,4 +137,5 @@ export async function closeDb(): Promise<void> {
   client = null;
   db = null;
   ready = false;
+  coaReady = false;
 }

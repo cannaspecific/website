@@ -74,6 +74,15 @@ Until the from-address is a real sender on the authenticated domain, SendGrid wi
 - Honeypot field `companyWebsite` plus an in-memory per-IP rate limit. The rate limit resets when a free Render instance sleeps, which is acceptable for one instance.
 - `GET /api/admin/submissions` and `GET /api/admin/submissions.csv` require `ADMIN_TOKEN`.
 - Open `/admin`, paste the token, and export CSV from the browser. The token is not put in the query string.
+- `/coa` is a private beta that reads certificate text and compares 2–4 parsed COAs. It uses the same `ADMIN_TOKEN`, asks for a 21+ confirmation, and is disallowed in `robots.txt`. It is not linked from the public nav.
+
+## Certificate beta
+
+`/coa` parses a pasted certificate or the text layer of a PDF (`pdfjs-dist`). It does not OCR scans, call a paid API, or store the PDF. Parsed fields can be saved in Postgres table `coa_records` (created on boot with `CREATE TABLE IF NOT EXISTS`, same as submissions). If `DATABASE_URL` is missing, or that table cannot be created, the page still reads certificates and keeps them in the browser tab.
+
+The reader looks for product, strain, lab, batch, lot, test date, major and minor cannabinoids, common terpenes, and pass/fail words next to five safety panel names. It checks `total = neutral + 0.877 × acid` for THC and CBD. A test date more than 365 days old is flagged. Dates written as `MM/DD/YYYY` are read as US dates. Confidence is how many fields were recognized, not a grade of the product. Nothing on the page is medical or health advice.
+
+Three invented fixtures live in `shared/coa-samples.ts`. The lab name Northglass Sample Lab is fictional.
 - Older rows in the `interests` table show up in admin as legacy. They were stored, but that form never notified the owner. This deploy does not email those old addresses.
 
 The previous public `GET /api/interests` endpoint has been removed. It returned every submission without a token.

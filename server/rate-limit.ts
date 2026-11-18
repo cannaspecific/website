@@ -43,3 +43,8 @@ export const submissionRateLimit = createRateLimiter({
   windowMs: Number.isFinite(windowMs) && windowMs > 0 ? windowMs : 10 * 60 * 1000,
   max: Number.isFinite(max) && max > 0 ? max : 8,
 });
+
+export const coaRateLimit = createRateLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 30,
+});
