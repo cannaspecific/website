@@ -15,6 +15,7 @@ import { ROBOTS_TXT } from "./robots";
 import { isDbReady } from "./db";
 import { deliverSubmissionEmails } from "./email";
 import { submissionRateLimit } from "./rate-limit";
+import { registerCoaRoutes } from "./coa-routes";
 import {
   createSubmission,
   listAdminSubmissions,
@@ -219,6 +220,8 @@ function requireAdmin(req: Request, res: Response): boolean {
 }
 
 export function registerRoutes(app: Express): void {
+  registerCoaRoutes(app);
+
   app.get("/robots.txt", (_req, res) => {
     res.set("Cache-Control", "public, max-age=0");
     res.type("text/plain; charset=utf-8").send(ROBOTS_TXT);

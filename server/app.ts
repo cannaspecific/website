@@ -15,8 +15,15 @@ export function createExpressApp(): Express {
     next();
   });
 
-  app.use(express.json({ limit: "32kb" }));
   app.use(express.urlencoded({ extended: false }));
+  app.use((req, res, next) => {
+    // Certificate reads carry pasted text or a PDF. Other routes stay on the small JSON cap.
+    if (req.path.startsWith("/api/coa")) {
+      next();
+      return;
+    }
+    express.json({ limit: "32kb" })(req, res, next);
+  });
 
   app.use((req, res, next) => {
     const start = Date.now();
@@ -43,6 +50,15 @@ export async function attachClient(app: Express, server: Server): Promise<void> 
 export function attachErrorHandler(app: Express): void {
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     if (res.headersSent) return;
+    const tooLarge = typeof err === "object" && err !== null && "type" in err
+      && (err as { type?: string }).type === "entity.too.large";
+    if (tooLarge) {
+      res.status(413).json({
+        success: false,
+        message: "That upload is too large.",
+      });
+      return;
+    }
     const syntax = err instanceof SyntaxError && "body" in (err as { body?: unknown });
     if (syntax) {
       res.status(400).json({

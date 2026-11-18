@@ -7,7 +7,7 @@ export default function Terms() {
       <PageIntro
         kicker="Terms"
         title="Rules for using this site."
-        lede="These terms cover the public website, the waitlist, and pilot inquiries. They are not a contract for software you cannot buy yet."
+        lede="These terms cover the public website, the waitlist, pilot inquiries, and the private certificate reader. They are not a contract for software you cannot buy yet."
       />
       <article className="mx-auto max-w-3xl space-y-8 px-5 py-14 text-[#24312c] md:px-8">
         <section>
@@ -20,6 +20,12 @@ export default function Terms() {
           <h2 className="font-heading text-2xl text-[#14211c]">No medical advice and no cannabis sales</h2>
           <p className="mt-3 leading-relaxed">
             Content on this site is general information about a software project. It is not medical, legal, or compliance advice. It does not diagnose, treat, or recommend a product for any health purpose. CannaSpecific does not sell cannabis and does not arrange for anyone else to sell it to you.
+          </p>
+        </section>
+        <section>
+          <h2 className="font-heading text-2xl text-[#14211c]">Certificate reader</h2>
+          <p className="mt-3 leading-relaxed">
+            The certificate page is a private reading aid. It extracts text and compares figures. It is not a compliance determination, a safety approval, or medical or health advice. You are responsible for the files you upload and for checking them against the original laboratory document.
           </p>
         </section>
         <section>
@@ -49,7 +55,7 @@ export default function Terms() {
             Questions about these terms:{" "}
             <a className="underline underline-offset-4" href="mailto:cannaspecific@gmail.com">cannaspecific@gmail.com</a>.
           </p>
-          <p className="mt-3 text-sm">Last updated October 24, 2026.</p>
+          <p className="mt-3 text-sm">Last updated November 18, 2026.</p>
         </section>
       </article>
     </SiteLayout>

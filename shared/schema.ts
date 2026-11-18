@@ -1,7 +1,8 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import type { ParsedCoa } from "./coa";
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -73,6 +74,21 @@ export const submissions = pgTable("submissions", {
 });
 
 export type Submission = typeof submissions.$inferSelect;
+
+/**
+ * Parsed cannabis certificates from the private beta reader.
+ * The PDF file is not stored. `parsed` is the structured read.
+ */
+export const coaRecords = pgTable("coa_records", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  label: text("label").notNull(),
+  sourceName: text("source_name"),
+  sampleData: boolean("sample_data").notNull().default(false),
+  parsed: jsonb("parsed").$type<ParsedCoa>().notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type CoaRecordRow = typeof coaRecords.$inferSelect;
 
 export type AdminSubmission = {
   id: string;

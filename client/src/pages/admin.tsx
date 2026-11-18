@@ -86,7 +86,7 @@ export default function Admin() {
         <p className="kicker text-[#0f4d3a]">Private</p>
         <h1 className="mt-3 font-heading text-4xl">Submissions</h1>
         <p className="mt-3 max-w-2xl text-[#24312c]">
-          This page lists waitlist signups, pilot inquiries, and older interest-form rows. It asks for the admin token set on the server. The token is kept in this browser tab only.
+          This page lists waitlist signups, pilot inquiries, and older interest-form rows. It asks for the admin token set on the server. The token is kept in this browser tab only. The same token opens the <a className="underline underline-offset-4" href="/coa">certificate beta</a>.
         </p>
         <form
           className="mt-8 flex flex-col gap-3 sm:flex-row"

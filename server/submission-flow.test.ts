@@ -16,7 +16,9 @@ delete process.env.SENDGRID_FROM_EMAIL;
 const { initDb, closeDb, getSql } = await import("./db");
 const { createExpressApp, attachErrorHandler } = await import("./app");
 const { registerRoutes } = await import("./routes");
-const { submissionRateLimit } = await import("./rate-limit");
+const { coaRateLimit, submissionRateLimit } = await import("./rate-limit");
+const { COA_SAMPLES } = await import("@shared/coa-samples");
+const { buildEmptyPdf, buildTextPdf } = await import("./text-pdf");
 
 let server: Server;
 let base = "";
@@ -48,6 +50,7 @@ before(async () => {
   assert.equal(ready, true, "local Postgres should accept the test database");
   const sql = getSql();
   await sql`DELETE FROM submissions WHERE email LIKE 'test-%@example.com'`;
+  await sql`DELETE FROM coa_records WHERE source_name LIKE 'test-%'`;
   const app = createExpressApp();
   registerRoutes(app);
   attachErrorHandler(app);
@@ -60,6 +63,7 @@ before(async () => {
 after(async () => {
   const sql = getSql();
   await sql`DELETE FROM submissions WHERE email LIKE 'test-%@example.com'`;
+  await sql`DELETE FROM coa_records WHERE source_name LIKE 'test-%'`;
   await new Promise<void>((resolve, reject) => {
     server.close((error) => (error ? reject(error) : resolve()));
   });
@@ -187,5 +191,94 @@ describe("submission flow", { concurrency: 1 }, () => {
     const sql = getSql();
     const rows = await sql`SELECT count(*)::int AS count FROM submissions WHERE email LIKE 'test-rate-%@example.com'`;
     assert.equal(rows[0].count, 8);
+  });
+
+  it("reads a certificate only with the admin token and an age confirmation", async () => {
+    coaRateLimit.reset();
+    const hidden = await fetch(`${base}/api/coa/records`);
+    assert.equal(hidden.status, 401);
+
+    const missingAge = await post("/api/coa/parse", {
+      text: COA_SAMPLES[0].text,
+      sourceName: "test-harbor.txt",
+      remember: false,
+    });
+    assert.equal(missingAge.status, 401);
+
+    const authedNoAge = await post("/api/coa/parse", {
+      text: COA_SAMPLES[0].text,
+      sourceName: "test-harbor.txt",
+      remember: false,
+    }, { "x-admin-token": "test-admin-token" });
+    assert.equal(authedNoAge.status, 400);
+    assert.match(authedNoAge.body.message, /21 or older/);
+
+    const parsed = await post("/api/coa/parse", {
+      text: COA_SAMPLES[0].text,
+      sourceName: "test-harbor.txt",
+      ageConfirmed: true,
+      remember: true,
+    }, { "x-admin-token": "test-admin-token" });
+    assert.equal(parsed.status, 200);
+    assert.equal(parsed.body.success, true);
+    assert.equal(parsed.body.data.productName, "Harbor Kush Flower");
+    assert.equal(parsed.body.data.totals.thc.status, "ok");
+    assert.equal(parsed.body.db, true);
+    assert.ok(parsed.body.saved?.id);
+
+    const listed = await fetch(`${base}/api/coa/records`, {
+      headers: { "x-admin-token": "test-admin-token" },
+    });
+    assert.equal(listed.status, 200);
+    const listBody = await listed.json();
+    assert.equal(listBody.db, true);
+    assert.ok(listBody.data.some((row: { serverId: string }) => row.serverId === parsed.body.saved.id));
+
+    const removed = await fetch(`${base}/api/coa/records/${parsed.body.saved.id}`, {
+      method: "DELETE",
+      headers: { "x-admin-token": "test-admin-token" },
+    });
+    assert.equal(removed.status, 200);
+  });
+
+  it("reads a text-layer PDF and reports an empty scan without storing the file", async () => {
+    coaRateLimit.reset();
+    const pdf = buildTextPdf(COA_SAMPLES[1].text.split(/\n/));
+    const response = await fetch(`${base}/api/coa/parse?remember=1`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/pdf",
+        "x-admin-token": "test-admin-token",
+        "x-age-confirmed": "yes",
+        "x-coa-filename": "test-citrus.pdf",
+      },
+      body: pdf,
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.data.productName, "Citrus Drift Live Resin");
+    assert.equal(body.data.totals.thc.status, "mismatch");
+    assert.equal(body.data.sourceKind, "pdf");
+    const sql = getSql();
+    const rows = await sql<{ source_name: string }[]>`
+      SELECT source_name FROM coa_records WHERE id = ${body.saved.id}
+    `;
+    assert.equal(rows[0]?.source_name, "test-citrus.pdf");
+    await sql`DELETE FROM coa_records WHERE id = ${body.saved.id}`;
+
+    const empty = await fetch(`${base}/api/coa/parse`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/pdf",
+        "x-admin-token": "test-admin-token",
+        "x-age-confirmed": "yes",
+        "x-coa-filename": "test-scan.pdf",
+      },
+      body: buildEmptyPdf(),
+    });
+    assert.equal(empty.status, 200);
+    const emptyBody = await empty.json();
+    assert.match(emptyBody.data.warnings[0].message, /Scanned PDFs are not supported/);
+    assert.equal(emptyBody.saved, null);
   });
 });

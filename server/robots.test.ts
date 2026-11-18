@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import { ROBOTS_TXT, robotsRules } from "./robots";
 
 describe("robots.txt", () => {
-  it("allows the public site and blocks only admin and api", () => {
+  it("allows the public site and blocks admin, the certificate beta, and api", () => {
     const rules = robotsRules(ROBOTS_TXT);
     assert.deepEqual(
       rules.filter((rule) => rule.directive === "allow").map((rule) => rule.path),
@@ -12,7 +12,7 @@ describe("robots.txt", () => {
     );
     assert.deepEqual(
       rules.filter((rule) => rule.directive === "disallow").map((rule) => rule.path).sort(),
-      ["/admin", "/api"],
+      ["/admin", "/api", "/coa"],
     );
     assert.equal(
       rules.some((rule) => rule.directive === "disallow" && (rule.path === "/" || rule.path === "")),
